@@ -137,8 +137,26 @@ class SLM_API_Listener {
                     
                     $args = (array('result' => 'success', 'message' => 'License key activated'));
                     SLM_API_Utility::output_api_response($args);
+                } elseif(trim($fields['registered_domain']) != "") {
+                    //check first if the domain exists in the license, before we fire "Reached maximum allowable domains" in the clients face
+                    $continue = true;
+                    foreach($reg_domains as $reg_domain){
+                        if($reg_domain->registered_domain == $fields['registered_domain']){
+                            // we found the domain, make sure the client knows that he activated the license
+                            $args = (array('result' => 'success', 'message' => 'License key activated'));
+                            SLM_API_Utility::output_api_response($args);
+                            $continue = false;
+                            break;
+                        }
+                    }
+                    if($continue){
+                        // make sure the client knows that his license is activated on another domain
+                        $args = (array('result' => 'error', 'message' => 'License is already activated for another domain.'));
+                        SLM_API_Utility::output_api_response($args);
+                    }
                 } else {
-                    $args = (array('result' => 'error', 'message' => 'Reached maximum allowable domains'));
+                    //More info here and a reference back to the merchant, if not, can you use codes and not a string message
+                    $args = (array('result' => 'error', 'message' => 'Your license is valid for only '.$retLic->max_allowed_domains.' domain(s), if you acquire another license, Please visit <a href="'.get_blog_info('url').'">'.get_blog_info('name').'</a>.'));
                     SLM_API_Utility::output_api_response($args);
                 }
             } else {
